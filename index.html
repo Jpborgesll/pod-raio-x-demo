@@ -287,8 +287,9 @@ function ficha(emp){
       {t:'Oport.', num:true, f:r => r.n_oportunidades},
       {t:'Estágios', f:r => ou(r.estagios)},
       {t:'Último toque', f:r => data(r.ultimo_toque)},
-      {t:'Valor aberto', num:true, f:r => brl(r.valor_aberto)},
-    ], 'Ninguém com oportunidade registrada ainda — porta relativamente fria.')}
+      // sem oportunidade no CRM nao e "R$ 0", e "nao se aplica"
+      {t:'Valor aberto', num:true, f:r => r.n_oportunidades ? brl(r.valor_aberto) : '—'},
+    ], 'Ninguém da POD registrado nessa conta ainda — porta fria.')}
 
     <h3>Contatos</h3>
     ${tabela(contatos, [
