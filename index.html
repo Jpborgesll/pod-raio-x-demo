@@ -69,6 +69,27 @@ a{color:var(--violeta)}
   height:fit-content;white-space:nowrap;min-width:66px;text-align:center}
 .camadas .d{font-size:15px}
 
+/* ---- card "entenda a solução" ---- */
+.card .lead{font-size:16.5px;margin:.4em 0 0}
+.passos{list-style:none;padding:0;margin:14px 0 0;counter-reset:passo}
+.passos li{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--marfim-dk)}
+.passos li:last-child{border-bottom:none}
+.passos li::before{counter-increment:passo;content:counter(passo);
+  font-family:'Anton',Impact,sans-serif;font-size:13px;background:var(--verde);
+  color:var(--marinho);border-radius:50%;width:24px;height:24px;flex:0 0 24px;
+  display:flex;align-items:center;justify-content:center;margin-top:1px}
+.passos .d{font-size:15px}
+.passos .d b{font-weight:600}
+.cta{margin-top:16px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.cta .chip{background:var(--marinho);color:var(--verde);border-color:var(--marinho);
+  font-family:'Anton',Impact,sans-serif;letter-spacing:.5px;font-size:14px;padding:5px 16px}
+.cta .chip:hover{background:var(--verde);color:var(--marinho)}
+
+/* nome de empresa clicavel dentro da tabela — leve, sem virar um botao pesado */
+.linkbtn.chip{border:none;background:none;padding:0;font-weight:600;font-size:14px;
+  border-bottom:2px solid var(--verde);border-radius:0;white-space:nowrap}
+.linkbtn.chip:hover{background:var(--verde)}
+
 /* ---------------- métricas ---------------- */
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:18px 0 4px}
 @media(max-width:820px){.metrics{grid-template-columns:repeat(2,1fr)}}
@@ -118,7 +139,7 @@ footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--marfim-dk);
     <input id="busca" type="search" autocomplete="off" list="lista-empresas"
            placeholder="Digite uma empresa — ex.: CEMIG, Itaú, Vale">
     <datalist id="lista-empresas"></datalist>
-    <div class="chips" id="chips"><span class="lbl">No lake:</span></div>
+    <div class="chips" id="chips"><span class="lbl">Exemplos:</span></div>
   </div>
 
   <main id="saida"></main>
@@ -174,19 +195,31 @@ function tabela(linhas, cols, vazio){
 }
 
 function estadoVazio(){
-  const empresas = LAKE.empresas;
+  // maior pipeline primeiro — mesma ordem que a coluna visivel — depois A-Z
+  const empresas = [...LAKE.empresas].sort((a, b) =>
+    b.valor_pipeline - a.valor_pipeline ||
+    b.valor_ganho - a.valor_ganho ||
+    a.empresa_canonica.localeCompare(b.empresa_canonica, 'pt-BR'));
   return `
   <div class="pitch">
     <div class="card">
-      <h3 style="margin-top:0">O problema</h3>
-      <p>O comercial bate na porta de um cliente sem saber que <b>outro comercial da POD
-      já fala com ele</b>, que ele foi a dois eventos nossos e deu NPS 10. A informação
-      existe — só está espalhada entre RD Station, Pipedrive e planilhas.</p>
-      <h3>A solução</h3>
-      <p>Um data lake que centraliza, higieniza e <b>resolve a identidade</b> das empresas
-      (CEMIG, CEMIG D e Companhia Energética de Minas Gerais viram uma coisa só) e
-      devolve isso como uma busca: <b>digite o nome do cliente → visão 360</b>.</p>
-      <p class="muted">Experimente aí em cima: comece por <b>CEMIG</b>.</p>
+      <h3 style="margin-top:0">Entenda a solução!</h3>
+      <p class="lead">Digite o nome de um cliente e o lake devolve, em um segundo, tudo
+      o que a POD já construiu com ele — de RD Station e Pipedrive, juntos e limpos.</p>
+      <ol class="passos">
+        <li><span class="d"><b>Quem já fala com a conta.</b> Quantos comerciais da POD já
+          tocam esse cliente, em quais áreas e com quanto em jogo.</span></li>
+        <li><span class="d"><b>Uma empresa só, sem duplicata.</b> CEMIG, CEMIG D e
+          Companhia Energética de Minas Gerais viram um único registro.</span></li>
+        <li><span class="d"><b>O engajamento que o CRM não mostra.</b> Eventos, presenças
+          e NPS de cada pessoa da conta.</span></li>
+        <li><span class="d"><b>A conta em ordem cronológica.</b> A linha do tempo completa
+          do relacionamento, para chegar na reunião sabendo o histórico.</span></li>
+      </ol>
+      <div class="cta">
+        <button class="chip" data-nome="CEMIG">Ver a CEMIG →</button>
+        <span class="muted" style="font-size:14px">ou busque qualquer empresa aí em cima</span>
+      </div>
     </div>
     <div class="card">
       <h3 style="margin-top:0">Arquitetura</h3>
@@ -202,13 +235,15 @@ function estadoVazio(){
       provedor licenciado (LGPD).</p>
     </div>
   </div>
-  <h3>Empresas no lake</h3>
+  <h3>Empresas no lake <span class="muted" style="font-family:'Newsreader',Georgia,serif;
+    text-transform:none;letter-spacing:0;font-size:15px">(${empresas.length})</span></h3>
   ${tabela(empresas, [
-    {t:'Empresa', f:e => `<b>${esc(e.empresa_canonica)}</b>`},
+    {t:'Empresa', f:e => `<button class="linkbtn chip" data-nome="${esc(e.empresa_canonica)}">${esc(e.empresa_canonica)}</button>`},
     {t:'Também aparece como', f:e => ou(e.apelidos)},
     {t:'Contatos', num:true, f:e => e.n_contatos},
     {t:'Comerciais', num:true, f:e => e.n_comerciais},
     {t:'Pipeline aberto', num:true, f:e => brl(e.valor_pipeline)},
+    {t:'Último contato', f:e => data(e.ultimo_contato)},
     {t:'Temperatura', f:e => `<span class="badge" style="top:0;font-size:13px;background:${COR_TEMP[e.temperatura]||'#595959'}">${esc(e.temperatura)}</span>`},
   ], '')}`;
 }
@@ -338,8 +373,12 @@ fetch('data/lake.json')
     LAKE = d;
     document.getElementById('lista-empresas').innerHTML =
       d.empresas.map(e => `<option value="${esc(e.empresa_canonica)}">`).join('');
+    // atalhos: as contas mais movimentadas (a lista completa esta na tabela abaixo)
+    const destaques = [...d.empresas]
+      .sort((a, b) => b.valor_pipeline - a.valor_pipeline)
+      .slice(0, 5);
     document.getElementById('chips').insertAdjacentHTML('beforeend',
-      d.empresas.map(e => `<button class="chip" data-nome="${esc(e.empresa_canonica)}">${esc(e.empresa_canonica)}</button>`).join(''));
+      destaques.map(e => `<button class="chip" data-nome="${esc(e.empresa_canonica)}">${esc(e.empresa_canonica)}</button>`).join(''));
     // deep-link: ?empresa=CEMIG
     document.getElementById('busca').value =
       new URLSearchParams(location.search).get('empresa') || '';
